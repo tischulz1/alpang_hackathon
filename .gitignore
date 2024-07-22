@@ -1,4 +1,5 @@
 .snakemake
 align/software
 align/out
-out
+data/21:14459766-14464736/OWN
+out

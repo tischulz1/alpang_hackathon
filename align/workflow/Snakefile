@@ -1,4 +1,5 @@
 from os.path import join as pjoin
+from os import popen
 
 
 configfile: "config/config.yaml"
@@ -11,10 +12,16 @@ ILLUMINA_DIR = config["illumina"]["dir"]
 ILLUMINA_ODIR = config["illumina"]["outdir"]
 ONT_DIR = config["ont"]["dir"]
 ONT_ODIR = config["ont"]["outdir"]
+OWN_SCRIPT_DIR = config["own"]["dir"]
+OWN_SCRIPT_ODIR = config["own"]["outdir"]
 
+HAPLO_NAMES = [f"{h}#{n}" for n in range(config['nbHapPerSmpl']) for h in popen(f'zgrep "#CHROM" {config["own"]["vcfFile"]}').read()[46:-1].split('\t')]
 
 ##### include rules #####
 include: "rules/bio.smk"
+include: "rules/reference.smk"
+include: "rules/ownSim.smk"
+include: "rules/eval.smk"
 include: "rules/minigraph.smk"
 include: "rules/graphchainer.smk"
 include: "rules/minichain.smk"
@@ -75,3 +82,4 @@ rule all:
             pjoin(ONT_ODIR, "graph_aligner", "{sample}.gaf"),
             sample=config["ont"]["samples"],
         ),
+        pjoin(OWN_SCRIPT_ODIR, "graph_aligner", f"evaluationResults_minOv{config['minOverlapRatio']}.txt")
