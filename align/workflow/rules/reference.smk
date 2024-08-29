@@ -9,5 +9,5 @@ rule generateLinearReference:
     shell:
         """
         bcftools consensus -f {input.reference} -H $(({wildcards.haplotype}+1)) -s {wildcards.sample} {input.variants} > {output}
-        sed -i '/^>/c\>  {wildcards.sample}#{wildcards.haplotype}' {output}
+        sed -i '/^>/c\\>  {wildcards.sample}#{wildcards.haplotype}' {output}
         """

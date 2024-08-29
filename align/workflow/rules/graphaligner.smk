@@ -49,7 +49,9 @@ rule graph_aligner_ownScript:
         pjoin(OWN_SCRIPT_ODIR, "graph_aligner", "{haplotype}.log.txt"),
     conda:
         "../envs/graphaligner.yaml"
+    benchmark:
+        pjoin(OWN_SCRIPT_ODIR, "graph_aligner", "{haplotype}.benchmark.txt")
     shell:
         """
-        GraphAligner -g {input.graph} -f {input.reads} -x vg -a {output} -t {threads}
+        GraphAligner -g {input.graph} -f {input.reads} -x vg -a {output} -t {threads} > {log}
         """
