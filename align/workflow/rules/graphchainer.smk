@@ -103,3 +103,11 @@ rule graphchainer_ownScript:
             --colinear-gap {params.colinear_gap} \
             -f {input.fa} -g {input.graph} -a {output} &> {log}
         """
+
+rule gam2json:
+    input:
+        "{gamFile}.gam"
+    output:
+        "{gamFile}.json"
+    shell:
+        "vg view -aj {input} > {output}"

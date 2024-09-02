@@ -51,7 +51,13 @@ rule all:
             pjoin(ONT_ODIR, "graphchainer", "{sample}.gam"),
             sample=config["ont"]["samples"],
         ),
-        pjoin(OWN_SCRIPT_ODIR, "graphchainer", f"evaluationResults_minOv{config['minOverlapRatio']}.txt"),
+        expand(
+            pjoin(OWN_SCRIPT_ODIR, "sequence_to_graph_mappings", "graphchainer", "{sample}#{h}.testReads.json"),
+            sample=["HG00099", "HG00105", "HG00119", "HG00120", "HG00122", "HG00125", "HG00126", "HG00132", "HG00137", "HG00137"] + \
+            ["HG00145", "HG00150", "HG00158", "HG00160", "HG00173", "HG00180"],
+            h=[0, 1]
+        ),
+        # pjoin(OWN_SCRIPT_ODIR, "graphchainer", f"evaluationResults_minOv{config['minOverlapRatio']}.txt"),
         expand(
             pjoin(ILLUMINA_ODIR, "minichain", "{sample}.gaf"),
             sample=config["illumina"]["samples"],

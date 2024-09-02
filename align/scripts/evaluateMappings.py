@@ -28,7 +28,7 @@ def readMappingFile(file):
     return mappings
 
 #This function takes graph paths, graph sequences and mappings and calculates for each mapping the coordinates on a linear reference
-def compMappingCoords(graphPaths, graphNodeSequences, mappingsPerHaplotype):
+def compMappingCoords(graphPaths, graphNodeSeqLens, mappingsPerHaplotype):
     mappingCoordsPerHaplotype = {}
 
     #Iterate over all haplotypes
@@ -40,6 +40,9 @@ def compMappingCoords(graphPaths, graphNodeSequences, mappingsPerHaplotype):
             #We do not support the negative strand yet!
             strand = currMapping["strand"]
         
+            #Testing
+            # print("currMapping:", currMapping)
+            
             if strand != '+':
                 print(f"ERROR: Found strand {strand}. We do not support this yet!", file=stderr)
                 continue
@@ -55,6 +58,9 @@ def compMappingCoords(graphPaths, graphNodeSequences, mappingsPerHaplotype):
             # print("compMappingCoords: m:", m)
     
             graphPath = graphPaths[f"{h}#21#0"][:-1]
+
+            #Testing
+            # print("graphPath:", graphPath)
     
             #So far we do not support character '-' in graph paths
             if graphPath.find('-') >= 0:
@@ -65,29 +71,48 @@ def compMappingCoords(graphPaths, graphNodeSequences, mappingsPerHaplotype):
         
             #An index to keep track at which node in nodeSeq we are
             i = 0
-            startIsFound = False
+
+            # startIsFound = False
+
             mappingStart = 0
     
             for v in graphPath.split("+,"):
-                if v != nodeSeq[i] and not startIsFound:
-                    mappingStart += len(graphNodeSequences[v])
-                elif not startIsFound:
-                    startIsFound = True
-    
-                    mappingEnd = mappingStart
-                    mappingStart += currMapping["start"]
-    
-                    #Check if first node in the path is also the last
-                    if nodeSeq[i] == nodeSeq[-1]:
-                        mappingEnd += currMapping["end"] - 1
-                        break
-                    else:
-                        i += 1
-                elif v != nodeSeq[-1]:
+                #Testing
+                # print("i:", i)
+                # print("len(nodeSeq):", len(nodeSeq))
+
+                #We have not yet found the beginning of the mapping
+                if v != nodeSeq[i]:# and not startIsFound:
+                    mappingStart += graphNodeSeqLens[v]
                     i += 1
-                else:
-                    mappingEnd += currMapping["end"] - 1
+
+                    if i == len(nodeSeq):
+                        break
+                #We have just found the beginning of the mapping
+                else:#if not startIsFound:
                     break
+
+                #     startIsFound = True
+    
+                #     mappingEnd = mappingStart
+                #     mappingStart += currMapping["start"]
+    
+                #     #Check if first node in the path is also the last
+                #     if nodeSeq[i] == nodeSeq[-1]:
+                #         mappingEnd += currMapping["end"] - 1
+                #         break
+                #     else:
+                #         #Testing
+                #         print("Increase i")
+
+                #         i += 1
+                # #We have not yet found the last mapped node
+                # elif v != nodeSeq[-1]:
+                #     i += 1
+                # #We have found the last mapped node
+                # else:
+                #     mappingEnd += currMapping["end"] - 1
+                #     break
     
             if m in mappingCoordsPerHaplotype[h]:
                 print("WARNING: Found second mapping for read. Old mapping is overwritten!", file=stderr)
@@ -95,8 +120,14 @@ def compMappingCoords(graphPaths, graphNodeSequences, mappingsPerHaplotype):
             #Testing
             # print(f"compMappingCoords: mappingStart: {mappingStart} mappingEnd: {mappingEnd}")
             # exit(0)
-             
-            mappingCoordsPerHaplotype[h][m] = (mappingStart, mappingEnd)
+
+            pathLen = sum([graphNodeSeqLens[v] for v in graphNodeSeqLens])
+            
+            #Check if mapping path and haplotype path share any node
+            if mappingStart == pathLen:
+                mappingCoordsPerHaplotype[h][m] = (pathLen + 1, pathLen + 1)
+            else:
+                mappingCoordsPerHaplotype[h][m] = (mappingStart, mappingStart + currMapping["end"] - 1)
 
     return mappingCoordsPerHaplotype
 
@@ -110,13 +141,13 @@ if __name__ == '__main__':
     parser.add_argument('-r', metavar='reads', type=str, required=True, nargs='+', help="Mapped reads sequence files")
     arguments = parser.parse_args()
     #Read node sequences and paths from the graph
-    graphNodeSequences = {}
+    graphNodeSeqLens = {}
     graphPaths = {}
     
     for l in arguments.g:
         if l.startswith("S"):
             elems = l.split('\t')
-            graphNodeSequences[elems[1]] = elems[2].rstrip()
+            graphNodeSeqLens[elems[1]] = len(elems[2].rstrip())
         if l.startswith("P"):
             elems = l.split('\t')
             graphPaths[elems[1]] = elems[2]
@@ -129,7 +160,7 @@ if __name__ == '__main__':
         mappingsPerHaplotype[basename(f).split('.')[0]] = readMappingFile(f)
         
     #Calculate linear coordinates for all mappings        
-    mappingCoordsPerHaplotype = compMappingCoords(graphPaths, graphNodeSequences, mappingsPerHaplotype)
+    mappingCoordsPerHaplotype = compMappingCoords(graphPaths, graphNodeSeqLens, mappingsPerHaplotype)
     mappingOutcome = {}
     
     for h in mappingCoordsPerHaplotype:
